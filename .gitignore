@@ -43,7 +43,7 @@ wheels/
 .vscode/
 *.iml
 
-# Secrets and local configuration
+# Secrets and local configuration (including RAG_PROJECT/.env)
 .env
 .env.*
 !.env.example
