@@ -1,7 +1,7 @@
 from typing import List
 from langchain_experimental.text_splitter import SemanticChunker
 
-from semirag.models.embeddings_model import openai_embedding
+from semirag.models.embeddings_model import bge_embedding
 from semirag.utils.log_utils import log
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_core.documents import Document
@@ -13,7 +13,7 @@ class MarkdownParser:
     """
     def __init__(self):
         self.text_splitter = SemanticChunker(
-            openai_embedding, breakpoint_threshold_type="percentile"
+            bge_embedding, breakpoint_threshold_type="percentile"
         )
 
     def text_chunker(self, datas: List[Document]) -> List[Document]:

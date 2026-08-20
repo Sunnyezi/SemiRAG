@@ -1,11 +1,4 @@
-from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
-from semirag.config import OPENAI_API_KEY
-
-openai_embedding = OpenAIEmbeddings(
-    openai_api_key=OPENAI_API_KEY,
-    openai_api_base="https://xiaoai.plus/v1"
-)
 
 model_name = "BAAI/bge-small-zh-v1.5"
 model_kwargs = {"device": "cpu"}

@@ -77,16 +77,23 @@ cp .env.example .env
 `.env` 已被 Git 忽略，填入本地密钥和连接配置即可：
 
 ```dotenv
-OPENAI_API_KEY=your_openai_compatible_key
-DEEPSEEK_API_KEY=your_deepseek_key            # 切换到 DeepSeek 后需要
-TAVILY_API_KEY=your_tavily_key                # 仅联网搜索需要
+LLM_PROVIDER=deepseek                          # 可选：deepseek、openai
+DEEPSEEK_API_KEY=your_deepseek_key             # LLM_PROVIDER=deepseek 时必填
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+
+OPENAI_API_KEY=your_openai_compatible_key      # LLM_PROVIDER=openai 时必填
+OPENAI_BASE_URL=https://xiaoai.plus/v1
+OPENAI_MODEL=gpt-4o-mini
+
+TAVILY_API_KEY=your_tavily_key                 # 仅联网搜索需要
 
 MILVUS_URI=http://localhost:19530
 COLLECTION_NAME=semirag_knowledge_base
 KNOWLEDGE_BASE_DIR=data/knowledge_base/semiconductor
 ```
 
-默认聊天模型和嵌入模型的 OpenAI 兼容接口配置在 `src/semirag/models/`。若改用 DeepSeek，请在 `all_llm.py` 中启用对应配置；嵌入模型仍需要一个兼容的嵌入接口。
+聊天模型由 `.env` 的 `LLM_PROVIDER`、`*_BASE_URL` 和 `*_MODEL` 选择，无需修改代码。向量嵌入及语义切分均使用本地 `BAAI/bge-small-zh-v1.5`，不需要 OpenAI 兼容的 embedding 接口。
 
 ## 导入知识库
 

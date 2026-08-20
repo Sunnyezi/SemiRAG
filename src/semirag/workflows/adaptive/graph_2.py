@@ -6,6 +6,7 @@ from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
 from semirag.utils.log_utils import log
+from semirag.utils.text_encoding import normalize_terminal_text
 from semirag.workflows.adaptive.generate_node2 import generate
 from semirag.workflows.adaptive.grade_answer_chain import answer_grader_chain
 from semirag.workflows.adaptive.grade_documents_node import grade_documents
@@ -89,7 +90,7 @@ graph = workflow.compile()
 def main() -> None:
     """Run the interactive adaptive RAG workflow."""
     while True:
-        question = input("用户：")
+        question = normalize_terminal_text(input("用户："))
         if question.lower() in ["q", "exit", "quit"]:
             print("对话结束，拜拜！")
             break

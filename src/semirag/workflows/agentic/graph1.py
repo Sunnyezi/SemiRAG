@@ -1,5 +1,6 @@
 """Tool-calling Agentic RAG workflow."""
 
+import re
 import uuid
 from typing import Literal
 
@@ -13,31 +14,45 @@ from semirag.models.all_llm import llm
 from semirag.retrieval.retriever_tools import retriever_tool
 from semirag.utils.log_utils import log
 from semirag.utils.print_utils import _print_event
+from semirag.utils.text_encoding import normalize_terminal_text
 from semirag.workflows.agentic.agent_node import agent_node
 from semirag.workflows.agentic.generate_node import generate
 from semirag.workflows.agentic.get_human_message import get_last_human_message
-from semirag.workflows.agentic.graph_state1 import AgentState, Grade
+from semirag.workflows.agentic.graph_state1 import AgentState
 from semirag.workflows.agentic.rewrite_node import rewrite
+
+
+def _parse_binary_score(response_content: object) -> str:
+    """Extract a single ``yes`` or ``no`` verdict from a text-model response."""
+    normalized = str(response_content).strip().lower()
+    scores = re.findall(r"(?<![a-z])(yes|no)(?![a-z])", normalized)
+
+    if not scores or len(set(scores)) != 1:
+        raise ValueError(
+            "The relevance grader must return exactly one of 'yes' or 'no'; "
+            f"received: {response_content!r}"
+        )
+    return scores[0]
 
 
 def grade_documents(state: AgentState) -> Literal["generate", "rewrite"]:
     """Judge whether the retrieved documents are relevant to the user question."""
     log.info("---检查 document 的相关性---")
-    llm_with_structured = llm.with_structured_output(Grade)
     prompt = PromptTemplate(
         template="""你是一个评估检索文档与用户问题相关性的评分器。\n
 这是检索到的文档：\n\n {context} \n\n
 这是用户的问题：{question} \n
 如果文档包含与用户问题相关的关键词或语义含义，则评为相关。
-给出二元评分 'yes' 或 'no' 来表示文档是否与问题相关。""",
+只输出二元评分 'yes' 或 'no'，不要输出其他内容。""",
         input_variables=["context", "question"],
     )
-    chain = prompt | llm_with_structured
+    chain = prompt | llm
 
     messages = state["messages"]
     question = get_last_human_message(messages).content
     documents = messages[-1].content
-    score = chain.invoke({"question": question, "context": documents}).binary_score
+    response = chain.invoke({"question": question, "context": documents})
+    score = _parse_binary_score(response.content)
 
     if score == "yes":
         log.info("---输出：文档相关---")
@@ -65,7 +80,7 @@ def main() -> None:
     """Run the interactive tool-calling RAG workflow."""
     printed = set()
     while True:
-        question = input("用户：")
+        question = normalize_terminal_text(input("用户："))
         if question.lower() in ["q", "exit", "quit"]:
             log.info("对话结束，拜拜！")
             break

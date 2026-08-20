@@ -46,6 +46,7 @@ wheels/
 # Secrets and local configuration (including the root .env)
 .env
 .env.*
+.local/
 !.env.example
 *.pem
 *.key

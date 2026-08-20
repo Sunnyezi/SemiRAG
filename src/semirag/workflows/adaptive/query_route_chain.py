@@ -4,6 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
 from semirag.models.all_llm import llm
+from semirag.utils.choice_parser import parse_choice
 
 
 # 查询的动态路由： 根据用户的提问，决策采用哪种检索策略（网络检索，RAG）
@@ -18,13 +19,11 @@ class RouteQuery(BaseModel):
     )
 
 
-# 带函数调用的LLM
-structured_llm_router = llm.with_structured_output(RouteQuery)
-
 # 提示词模板
 system = """你是一个擅长将用户问题路由到向量知识库或网络搜索的专家。
 向量知识库包含与半导体材料，芯片制造，光刻技术相关的文档。
-对于这些主题的问题请使用向量知识库，其他情况使用网络搜索。"""
+对于这些主题的问题请使用向量知识库，其他情况使用网络搜索。
+只输出 `vectorstore` 或 `web_search`，不要输出其他内容。"""
 route_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", system),  # 系统提示词
@@ -32,8 +31,14 @@ route_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-# 创建问题路由器链
-question_router_chain = route_prompt | structured_llm_router
+def _parse_route(response: object) -> RouteQuery:
+    return RouteQuery(
+        datasource=parse_choice(response, ("vectorstore", "web_search"))
+    )
+
+
+# 创建问题路由器链。使用普通文本输出，兼容不支持 JSON Schema 的模型接口。
+question_router_chain = route_prompt | llm | _parse_route
 
 
 # 测试路由器
